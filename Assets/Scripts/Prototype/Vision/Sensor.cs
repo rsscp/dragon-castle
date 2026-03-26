@@ -6,13 +6,13 @@ using static UnityEngine.UI.Image;
 using System;
 using UnityEngine.Animations;
 
-public class EyeDetect : MonoBehaviour
+public class Sensor : MonoBehaviour
 {
-    [SerializeField] EyeTarget target;
+    [SerializeField] SensorTarget target;
     [SerializeField] float range = 20;
     [SerializeField] float angle = 40;
-    [SerializeField] float detectionIncrement = 0.1f;
-    [SerializeField] float detectionDecrement = -0.01f;
+    [SerializeField] float detectionIncrement = 0.01f;
+    [SerializeField] float detectionDecrement = -0.0001f;
 
     private LayerMask mask;
     private float detectionState = 0;
@@ -129,8 +129,22 @@ public class EyeDetect : MonoBehaviour
             Gizmos.color = Color.blue;
             Gizmos.DrawLine(
                 transform.parent.position,
-                transform.parent.position + transform.parent.forward * 2
+                transform.parent.position + Quaternion.Euler(angle, 0, 0) * (transform.parent.forward * range)
             );
+            Gizmos.DrawLine(
+                transform.parent.position,
+                transform.parent.position + Quaternion.Euler(-angle, 0, 0) * (transform.parent.forward * range)
+            );
+            Gizmos.DrawLine(
+                transform.parent.position,
+                transform.parent.position + Quaternion.Euler(0, angle, 0) * (transform.parent.forward * range)
+            );
+            Gizmos.DrawLine(
+                transform.parent.position,
+                transform.parent.position + Quaternion.Euler(0, -angle, 0) * (transform.parent.forward * range)
+            );
+
+            Debug.Log(transform.parent.forward);
         }
     }
 #endif

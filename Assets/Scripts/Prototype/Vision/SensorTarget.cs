@@ -2,9 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using static UnityEngine.GraphicsBuffer;
 
-public class EyeTarget : MonoBehaviour
+public class SensorTarget : MonoBehaviour
 {
-    [SerializeField] EyeDetect eye;
+    [SerializeField] Sensor sensor;
     [SerializeField] float height = 3;
     [SerializeField] float width = 2;
     [SerializeField] public int rows = 7;
@@ -46,7 +46,7 @@ public class EyeTarget : MonoBehaviour
     {
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < columns; j++)
-                rayTargets[i, j] = eye.transform.rotation * rayTargetsReference[i, j];
+                rayTargets[i, j] = sensor.transform.rotation * rayTargetsReference[i, j];
     }
 
 #if UNITY_EDITOR

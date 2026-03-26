@@ -1,0 +1,10 @@
+{
+    "name": "Thunderrooster.Statemachine.Editor",
+    "references": [
+      "Thunderrooster.Statemachine"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}
