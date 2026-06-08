@@ -5,6 +5,8 @@
 // -----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Unity.Plastic.Newtonsoft.Json;
 using UnityEngine;
 
@@ -28,48 +30,60 @@ namespace Thunderrooster.Statemachine
         /// <param name="parameter3"> Description of parameter 3 </param>
         /// <returns> Description of what the function returns </returns>
 
-        private State[] states;
-        private int index;
 
-        public StateMachine(int initState, State[] states)
-        {
-            index = initState;
-            this.states = states;
-        }
+        //private State[] states;
+        //private int index;
+        private List<State> registry;
+        private State currentState;
 
         public void update()
         {
-            int newIndex = transition();
-                
-            if (newIndex != index)
-            {
-                states[index].exit();
-                states[newIndex].enter();
-            }
-
-            index = newIndex;
-            states[index].update();
+            currentState = currentState.getNextState();
+            currentState.update();
         }
 
-        public void force(int state)
+        public bool register(State[] newStates)
         {
-            this.index = state;
+            List<State> tempRegistry = new List<State>(registry);
+
+            // Verify if any state is already registered, register otherwise
+            foreach (State s in newStates)
+                if (!tempRegistry.Contains(s))
+                    tempRegistry.Add(s);
+
+            // Verify if all transitions result in registered states
+            foreach (State s in tempRegistry)
+                foreach (Transition t in s.transitions)
+                    if (!tempRegistry.Contains(t.resultState))
+                        return false;
+
+            registry = tempRegistry;
+            
+            return true;
         }
 
-        private int transition()
+        public void force(string stateName) //TODO kinda fragile...
         {
-            int newIndex = index;
-
-            foreach (Transition transition in states[index].transitions)
+            State nextState = getFromRegistry(stateName);
+            if (nextState != null)
             {
-                if (transition.condition())
-                {
-                    newIndex = transition.resultState;
-                    break;
-                }
+                currentState.exit();
+                currentState = nextState;
+                currentState.enter();
             }
+        }
 
-            return newIndex;
+        private State getFromRegistry(string name, List<State> registry)
+        {
+            foreach (State s in registry)
+                if (s.name == name)
+                    return s;
+            return null;
+        }
+
+        private State getFromRegistry(string name)
+        {
+            return getFromRegistry(name, registry);
         }
     }
 }

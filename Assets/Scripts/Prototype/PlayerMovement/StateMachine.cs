@@ -5,7 +5,10 @@ using UnityEngine;
 
 public enum MovementStates
 {
-    Idle, Walk, Run, Jump
+    Idle,
+    Walk,
+    Run,
+    Jump
 }
 
 public class MoveStateMachine : MonoBehaviour
