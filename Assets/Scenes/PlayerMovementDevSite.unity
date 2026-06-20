@@ -801,10 +801,6 @@ GameObject:
   m_Component:
   - component: {fileID: 298188829}
   - component: {fileID: 298188827}
-  - component: {fileID: 298188835}
-  - component: {fileID: 298188833}
-  - component: {fileID: 298188832}
-  - component: {fileID: 298188836}
   - component: {fileID: 298188831}
   - component: {fileID: 298188834}
   m_Layer: 0
@@ -882,35 +878,6 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &298188832
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 298188826}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b7a9a6fbd3209634fb6f810581989452, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sensibility: 0.1
-  upAngleLimit: 70
-  downAngleLimit: 60
-  camera: {fileID: 1749604081}
---- !u!114 &298188833
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 298188826}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 223418d58538cbb4d9d29c39fbccaddb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  velocityDropRatio: 0.4
 --- !u!95 &298188834
 Animator:
   serializedVersion: 7
@@ -933,30 +900,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &298188835
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 298188826}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ded3d6b38e4da7478c7f93079f65ae9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Input
---- !u!114 &298188836
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 298188826}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4f2a9050bd4b0146a8961d0170e8094, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MoveAlt
 --- !u!1 &444245592
 GameObject:
   m_ObjectHideFlags: 0

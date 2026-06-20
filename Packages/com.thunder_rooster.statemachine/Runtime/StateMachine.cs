@@ -33,8 +33,8 @@ namespace Thunderrooster.Statemachine
 
         //private State[] states;
         //private int index;
-        private List<State> registry;
-        private State currentState;
+        private List<Statee> registry;
+        private Statee currentState;
 
         public void update()
         {
@@ -42,18 +42,18 @@ namespace Thunderrooster.Statemachine
             currentState.update();
         }
 
-        public bool register(State[] newStates)
+        public bool register(Statee[] newStates)
         {
-            List<State> tempRegistry = new List<State>(registry);
+            List<Statee> tempRegistry = new List<Statee>(registry);
 
             // Verify if any state is already registered, register otherwise
-            foreach (State s in newStates)
+            foreach (Statee s in newStates)
                 if (!tempRegistry.Contains(s))
                     tempRegistry.Add(s);
 
             // Verify if all transitions result in registered states
-            foreach (State s in tempRegistry)
-                foreach (Transition t in s.transitions)
+            foreach (Statee s in tempRegistry)
+                foreach (Transitionn t in s.transitions)
                     if (!tempRegistry.Contains(t.resultState))
                         return false;
 
@@ -64,7 +64,7 @@ namespace Thunderrooster.Statemachine
 
         public void force(string stateName) //TODO kinda fragile...
         {
-            State nextState = getFromRegistry(stateName);
+            Statee nextState = getFromRegistry(stateName);
             if (nextState != null)
             {
                 currentState.exit();
@@ -73,15 +73,15 @@ namespace Thunderrooster.Statemachine
             }
         }
 
-        private State getFromRegistry(string name, List<State> registry)
+        private Statee getFromRegistry(string name, List<Statee> registry)
         {
-            foreach (State s in registry)
+            foreach (Statee s in registry)
                 if (s.name == name)
                     return s;
             return null;
         }
 
-        private State getFromRegistry(string name)
+        private Statee getFromRegistry(string name)
         {
             return getFromRegistry(name, registry);
         }
