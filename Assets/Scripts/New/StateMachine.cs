@@ -18,18 +18,29 @@ public class StateMachine : MonoBehaviour
     private const string NO_CURR_STATE_MSG = "An initial state has not been definied for this state machine";
     private string STATE_NOT_FOUND(string name)
     {
-        return $"A state by the name of {name} has not been found";
+        return $"The state '{name}' was not found";
+    }
+    private string NO_DIRECT_TRANSITION(string from, string to)
+    {
+        return $"The state '{from}' has no allowed direct transition to state '{to}'";
     }
 
     private class State
     {
         public StateBehaviour Behaviour { get; set; }
         public List<Transition> ConditionalTransitions { get; set; }
-        public List<Transition> DirectTransitions { get; set; }
+        public Dictionary<string, Transition> DirectTransitions { get; set; }
 
         public State(StateBehaviour behaviour)
         {
             Behaviour = behaviour;
+            ConditionalTransitions = new List<Transition>();
+            DirectTransitions = new Dictionary<string, Transition>();
+        }
+
+        public bool HasDirectTo(string name)
+        {
+            return DirectTransitions.TryGetValue(name, out var result);
         }
     }
     private class Transition
@@ -54,7 +65,7 @@ public class StateMachine : MonoBehaviour
     }
 
     private Dictionary<string, State> _states = new Dictionary<string, State>();
-    private string _current = null;
+    private string _current = "";
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -66,7 +77,7 @@ public class StateMachine : MonoBehaviour
     void Update()
     {
         _transition();
-        _current_state().Behaviour.Update();
+        _currentState().Behaviour.Update();
     }
 
     private void _check()
@@ -77,33 +88,31 @@ public class StateMachine : MonoBehaviour
             throw new Exception(NO_CURR_STATE_MSG); //TODO Use more specific exception
     }
 
-    private State _current_state()
+    private State _currentState()
     {
         return _states[_current];
     }
 
+    private void _transitionTo(string name)
+    {
+        _currentState().Behaviour.Exit();
+        _current = name;
+        _currentState().Behaviour.Enter();
+    }
+
     private void _transition()
     {
-        foreach (Transition transition in _current_state().ConditionalTransitions)
-        {
+        foreach (Transition transition in _currentState().ConditionalTransitions)
             if (transition.Check())
-            {
-                _current_state().Behaviour.Exit();
-                _current = transition.ResultName;
-                _current_state().Behaviour.Enter();
-            }
-        }
+                _transitionTo(transition.ResultName);
     }
 
     public void TransitionTo(string name)
     {
-        bool valid = _current_state()
-            .DirectTransitions
-            .Select(transition => transition.ResultState == _states[name])
-            .Count() > 0;
-
-        if (valid)
-            _current = name;
+        if (_currentState().HasDirectTo(name))
+            _transitionTo(name);
+        else
+            throw new Exception(NO_DIRECT_TRANSITION(_current, name));
     }
 
     public void AddState(string name, StateBehaviour behaviour)
@@ -129,7 +138,7 @@ public class StateMachine : MonoBehaviour
         State toState = _states[to];
         Transition transition = new Transition(to, toState);
 
-        fromState.DirectTransitions.Add(transition);
+        fromState.DirectTransitions.Add(to, transition);
     }
 
     public void SelectStartingState(string name)
