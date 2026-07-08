@@ -1,28 +1,26 @@
 using UnityEngine;
 
-public class Idle: StateBehaviour
+public class Falling : StateBehaviour
 {
     private StandardMovement _move;
 
-    public Idle(GameObject owner)
+    public Falling(GameObject owner)
     {
         _move = owner.GetComponent<StandardMovement>();
     }
 
     public override void Enter()
     {
-        Debug.Log("Entered Idle");
-        _move.MoveAcceleration = _move.BrakeAcceleration;
+        Debug.Log("Entered Falling");
     }
 
     public override void Stay()
     {
-        _move.ApplyMovement();
         _move.ApplyGravity();
     }
 
     public override void Exit()
     {
-        Debug.Log("Exited Idle");
+        Debug.Log("Exited Falling");
     }
 }

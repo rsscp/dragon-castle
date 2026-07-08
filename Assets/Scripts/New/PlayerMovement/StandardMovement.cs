@@ -1,13 +1,16 @@
 using System;
-using Unity.VisualScripting;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Windows;
-using static UnityEngine.GraphicsBuffer;
 
 public class StandardMovement : MonoBehaviour
 {
+    [SerializeField]
+    private Transform Camera;
+    [SerializeField]
+    private BoxCollider JumpVolume;
+    [SerializeField]
+    private LayerMask groundMask;
+
     [SerializeField]
     public float Gravity = 0.3f;
     [SerializeField]
@@ -17,7 +20,11 @@ public class StandardMovement : MonoBehaviour
     [SerializeField]
     public float BrakeAcceleration = 6f;
     [SerializeField]
-    public float JumpVelocity = 3f;
+    public float JumpVelocity = 5f;
+    [SerializeField]
+    public float MinJumpPitch = 20f;
+    [SerializeField]
+    public float MaxJumpPitch = 50f;
     [SerializeField]
     public float MaxWalkVelocity = 3f;
     [SerializeField]
@@ -42,12 +49,12 @@ public class StandardMovement : MonoBehaviour
     private StateMachine _movementSM;
     private CharacterController _characterCtrl;
 
-    private Vector2 _moveComponent = Vector2.zero;
+    private Vector3 _moveComponent = Vector3.zero;
     private Vector3 _gravityComponent = Vector3.zero;
     private Vector3 _jumpComponent = Vector3.zero;
     private Vector3 _finalVelocity = Vector3.zero;
 
-    private Vector2 MoveInput = Vector2.zero;
+    private Vector3 MoveInput = Vector3.zero;
     private bool WalkingHold = false;
     private bool RunHold = false;
     private bool JumpTrigger = false;
@@ -56,43 +63,78 @@ public class StandardMovement : MonoBehaviour
     private void Awake()
     {
         _input = new StandardActions();
+        _characterCtrl = GetComponent<CharacterController>();
+        _movementSM = GetComponent<StateMachine>();
         _setupStateMachine();
     }
 
     private void _setupStateMachine()
     {
-        _characterCtrl = GetComponent<CharacterController>();
-        _movementSM = GetComponent<StateMachine>();
-
-        StateBehaviour idleBehaviour = new Idle(this);
-        StateBehaviour walkingBehaviour = new Walking(this);
-        StateBehaviour runningBehaviour = new Running(this);
+        StateBehaviour idleBehaviour = new Idle(gameObject);
+        StateBehaviour walkingBehaviour = new Walking(gameObject);
+        StateBehaviour runningBehaviour = new Running(gameObject);
+        StateBehaviour jumpingBehaviour = new Jumping(gameObject);
+        StateBehaviour fallingBehaviour = new Falling(gameObject);
 
         _movementSM.AddState("idle", idleBehaviour);
         _movementSM.AddState("walking", walkingBehaviour);
         _movementSM.AddState("running", runningBehaviour);
+        _movementSM.AddState("jumping", jumpingBehaviour);
+        _movementSM.AddState("falling", fallingBehaviour);
 
         _movementSM.AddTransition("idle", "walking", () => MoveInput.magnitude > 0);
         _movementSM.AddTransition("walking", "idle", () => MoveInput.magnitude == 0);
         _movementSM.AddTransition("walking", "running", () =>
         {
-            return
-            RunHold &&
-            MoveInput.magnitude > 0 &&
-            Vector3.Angle(
+            return RunHold
+            && MoveInput.magnitude > 0
+            && Vector3.Angle(
                     transform.forward,
-                    transform.rotation * new Vector3(MoveInput.x, 0, MoveInput.y)
+                    transform.rotation * MoveInput
                 ) < MaxRunMisalignmentAngle;
         });
         _movementSM.AddTransition("running", "walking", () =>
         {
-            return
-                !RunHold ||
-                Vector3.Angle(
+            return !RunHold
+                || Vector3.Angle(
                     transform.forward,
-                    transform.rotation * new Vector3(MoveInput.x, 0, MoveInput.y)
-                ) > MaxRunMisalignmentAngle;
+                    transform.rotation * MoveInput
+                ) >= MaxRunMisalignmentAngle;
         });
+        _movementSM.AddTransition("running", "idle", () =>
+        {
+            return !RunHold
+                || Vector3.Angle(
+                    _finalVelocity,
+                    transform.rotation * MoveInput
+                ) >= MaxRunMisalignmentAngle;
+        });
+        _movementSM.AddTransition("running", "jumping", () =>
+        {
+            Vector3 halfExtents = Vector3.Scale(
+                JumpVolume.size * 0.5f,
+                JumpVolume.transform.lossyScale
+            );
+
+            var result = JumpTrigger
+            && Vector3.Angle(
+                transform.forward,
+                transform.rotation * MoveInput
+            ) < MaxRunMisalignmentAngle
+            && !Physics.CheckBox(
+                JumpVolume.transform.position,
+                halfExtents,
+                JumpVolume.transform.rotation,
+                groundMask,
+                QueryTriggerInteraction.Ignore
+            );
+
+            JumpTrigger = false;
+
+            return result;
+        });
+        _movementSM.AddTransition("jumping", "falling", () => true);
+        _movementSM.AddTransition("falling", "running", () => _characterCtrl.isGrounded);
         _movementSM.AddTransition("running", "idle", () => MoveInput.magnitude == 0);
 
         _movementSM.SelectStartingState("idle");
@@ -128,44 +170,54 @@ public class StandardMovement : MonoBehaviour
         _input.Player.Disable();
     }
 
+    private void _resetTriggers()
+    {
+        //This wasn't running on the right order (reset before trigger effect)
+    }
+
+    private void diableReferenceVolumes()
+    {
+        JumpVolume.enabled = false;
+    }
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        MoveInput = Vector2.zero;
-        JumpTrigger = false;
+        diableReferenceVolumes();
     }
 
     // Update is called once per frame
     void Update()
     {
-        _applyMovement();
-        _applyGravity();
-        _applyJump();
-        _characterCtrl.Move(transform.rotation * _finalVelocity * Time.deltaTime);
+        _characterCtrl.Move(_finalVelocity * Time.deltaTime);
+        _resetTriggers();
     }
 
-    private void _applyMovement()
+    public void ApplyMovement()
     {
         float alignment = Vector3.Angle(
             transform.forward,
-            transform.rotation * new Vector3(MoveInput.x, 0, MoveInput.y)
+            transform.rotation * MoveInput
         ) / 180;
         float alignmentStrentgh = MoveAlignmentCurve.Evaluate(alignment);
 
-        _moveComponent = Vector2.MoveTowards(
+        _moveComponent =  Vector3.MoveTowards(
             _moveComponent,
-            MoveInput * MaxMoveVelocity * alignmentStrentgh,
+            transform.rotation
+                * MoveInput
+                * MaxMoveVelocity
+                * alignmentStrentgh,
             MoveAcceleration * Time.deltaTime
         );
 
         _finalVelocity = new Vector3(
             _moveComponent.x,
             _finalVelocity.y,
-            _moveComponent.y
+            _moveComponent.z
         );
     }
 
-    private void _applyGravity()
+    public void ApplyGravity()
     {
         if (_characterCtrl.isGrounded)
         {
@@ -180,29 +232,61 @@ public class StandardMovement : MonoBehaviour
         }
     }
 
-    private void _applyJump()
+    public void ApplyJump()
     {
-        if (JumpTrigger && _characterCtrl.isGrounded)
-            _finalVelocity = new Vector3(_finalVelocity.x, JumpVelocity, _finalVelocity.z);
-        JumpTrigger = false;
+        if (false)
+        {
+            //TODO cheking for vaulting with volumes infront of player
+        }
+        else if (_characterCtrl.isGrounded)
+        {
+            Vector3 flatFinalVelocity = new Vector3(_finalVelocity.x, 0, _finalVelocity.z);
+            Vector3 lookDirection = Camera.transform.forward;
+            Vector3 jumpDirection = new Vector3(lookDirection.x, 0, lookDirection.z);
+            float launchPitch = Mathf.Clamp(
+                Mathf.DeltaAngle(0f, Camera.eulerAngles.x),
+                -MaxJumpPitch,
+                -MinJumpPitch
+            );
+
+            Debug.Log(Camera.localRotation.eulerAngles.x);
+
+            jumpDirection = Quaternion.AngleAxis(launchPitch, transform.right) * jumpDirection;
+
+            _finalVelocity = jumpDirection * JumpVelocity;
+        }
+    }
+
+    public void ApplyVelocity(Vector3 addedVelociy)
+    {
+        _finalVelocity += addedVelociy;
+    }
+
+    public float GetCurrentVelocity()
+    {
+        return _finalVelocity.magnitude;
+    }
+
+    public Vector3 GetVelocityDirection()
+    {
+        return new Vector3(_finalVelocity.x, _finalVelocity.z).normalized;
     }
 
     private void OnMoveStarted(InputAction.CallbackContext context)
     {
-        MoveAcceleration = WalkAcceleration;
-        MaxMoveVelocity = MaxWalkVelocity;
         WalkingHold = true;
     }
 
     private void OnMovePerformed(InputAction.CallbackContext context)
     {
-        MoveInput = context.ReadValue<Vector2>();
+        Vector2 input2D = context.ReadValue<Vector2>();
+        MoveInput = new Vector3(input2D.x, 0, input2D.y);
     }
 
     private void OnMoveCanceled(InputAction.CallbackContext context)
     {
         WalkingHold = false;
-        MoveInput = Vector2.zero;
+        MoveInput = Vector3.zero;
     }
 
     private void OnRunStarted(InputAction.CallbackContext context)
@@ -217,6 +301,8 @@ public class StandardMovement : MonoBehaviour
 
     private void OnJumpStarted(InputAction.CallbackContext context)
     {
+        Debug.Log("HellllooooooOOOOOO??????");
+
         JumpTrigger = true;
         JumpHold = true;
     }

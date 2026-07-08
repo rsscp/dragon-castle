@@ -8,7 +8,7 @@ using UnityEngine;
 public abstract class StateBehaviour
 {
     public abstract void Enter();
-    public abstract void Update();
+    public abstract void Stay();
     public abstract void Exit();
 }
 
@@ -77,7 +77,7 @@ public class StateMachine : MonoBehaviour
     void Update()
     {
         _transition();
-        _currentState().Behaviour.Update();
+        _currentState().Behaviour.Stay();
     }
 
     private void _check()

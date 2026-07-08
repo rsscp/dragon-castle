@@ -1,13 +1,5 @@
 {
   "dependencies": {
-    "com.thunder_rooster.statemachine": {
-      "version": "file:com.thunder_rooster.statemachine",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {
-        "com.unity.test-framework": "1.6.0"
-      }
-    },
     "com.unity.ai.navigation": {
       "version": "2.0.10",
       "depth": 0,

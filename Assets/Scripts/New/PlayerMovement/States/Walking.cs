@@ -4,22 +4,24 @@ public class Walking : StateBehaviour
 {
     private StandardMovement _move;
 
-    public Walking(StandardMovement move)
+    public Walking(GameObject owner)
     {
-        _move = move;
+        _move = owner.GetComponent<StandardMovement>();
     }
 
     public override void Enter()
     {
         Debug.Log("Entered Walking");
+
         _move.MoveAcceleration = _move.WalkAcceleration;
         _move.MaxMoveVelocity = _move.MaxWalkVelocity;
         _move.MoveAlignmentCurve = _move.WalkAlignmentCurve;
     }
 
-    public override void Update()
+    public override void Stay()
     {
-
+        _move.ApplyMovement();
+        _move.ApplyGravity();
     }
 
     public override void Exit()
