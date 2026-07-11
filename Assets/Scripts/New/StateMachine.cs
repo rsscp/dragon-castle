@@ -29,12 +29,14 @@ public class StateMachine : MonoBehaviour
     {
         public StateBehaviour Behaviour { get; set; }
         public List<Transition> ConditionalTransitions { get; set; }
+        public List<Transition> TriggerConditionalTransitions { get; set; }
         public Dictionary<string, Transition> DirectTransitions { get; set; }
 
         public State(StateBehaviour behaviour)
         {
             Behaviour = behaviour;
             ConditionalTransitions = new List<Transition>();
+            TriggerConditionalTransitions = new List<Transition>();
             DirectTransitions = new Dictionary<string, Transition>();
         }
 
@@ -107,6 +109,13 @@ public class StateMachine : MonoBehaviour
                 _transitionTo(transition.ResultName);
     }
 
+    public void TriggerTransition()
+    {
+        foreach (Transition transition in _currentState().TriggerConditionalTransitions)
+            if (transition.Check())
+                _transitionTo(transition.ResultName);
+    }
+
     public void TransitionTo(string name)
     {
         if (_currentState().HasDirectTo(name))
@@ -139,6 +148,16 @@ public class StateMachine : MonoBehaviour
         Transition transition = new Transition(to, toState);
 
         fromState.DirectTransitions.Add(to, transition);
+    }
+
+    public void AddTriggerTransition(string from, string to, Func<bool> condition)
+    {
+
+        State fromState = _states[from];
+        State toState = _states[to];
+        Transition transition = new Transition(to, toState, condition);
+
+        fromState.TriggerConditionalTransitions.Add(transition);
     }
 
     public void SelectStartingState(string name)

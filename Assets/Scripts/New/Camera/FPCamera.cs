@@ -45,9 +45,9 @@ public class FPSCamera : MonoBehaviour
         Pitch -= lookPitch;
         Pitch = Mathf.Clamp(Pitch, -85f, 85f);
 
-        Yaw += lookYaw;
-
         _playerCamera.localRotation = Quaternion.Euler(Pitch, 0f, 0f);
         transform.Rotate(Vector3.up * lookYaw);
+
+        Yaw = transform.eulerAngles.y;
     }
 }

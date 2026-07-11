@@ -25,7 +25,7 @@ public class Running : StateBehaviour
 
     public override void Stay()
     {
-        _move.ApplyMovement();
+        _move.ApplyRunningMovement();
         _move.ApplyGravity();
     }
 
